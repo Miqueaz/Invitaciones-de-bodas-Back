@@ -1,22 +1,21 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS  # Importar Flask-CORS
-from openpyxl import Workbook, load_workbook
 import os
+import csv
 from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)  # Habilitar CORS para todas las rutas
 
-# Ruta al archivo Excel
-EXCEL_FILE = 'asistencia.xlsx'
+# Ruta al archivo CSV
+EXCEL_FILE = 'asistencia.csv'
 
-# Verificar si el archivo Excel existe, si no, crearlo
+# Verificar si el archivo CSV existe, si no, crearlo
 if not os.path.exists(EXCEL_FILE):
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Asistencia"
-    ws.append(['ID', 'Fecha', 'Hora'])  # Encabezados de la hoja
-    wb.save(EXCEL_FILE)
+    with open(EXCEL_FILE, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        # Escribir los encabezados
+        writer.writerow(['ID', 'Fecha', 'Hora'])
 
 @app.route('/registrar_asistencia', methods=['POST'])
 def registrar_asistencia():
@@ -32,18 +31,15 @@ def registrar_asistencia():
         if not id_usuario:
             return jsonify({'error': 'ID no proporcionado'}), 400
 
-        # Cargar el archivo Excel existente
-        wb = load_workbook(EXCEL_FILE)
-        ws = wb.active
-
         # Obtener la fecha y hora actual
         now = datetime.now()
         fecha = now.strftime('%Y-%m-%d')
         hora = now.strftime('%H:%M:%S')
 
-        # Registrar la asistencia en el archivo Excel
-        ws.append([id_usuario, fecha, hora])
-        wb.save(EXCEL_FILE)
+        # Registrar la asistencia en el archivo CSV
+        with open(EXCEL_FILE, mode='a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([id_usuario, fecha, hora])  # Escribir nueva línea con asistencia
 
         return jsonify({'mensaje': 'Asistencia registrada correctamente'}), 200
 
